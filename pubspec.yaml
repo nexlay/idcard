@@ -1,0 +1,44 @@
+name: idcard
+description: Application like a ID card, where user can write and save own data in one place.
+
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^0.6.5
+  shared_preferences: ^0.5.6
+  sqflite: ^1.3.0
+  path_provider: ^1.6.5
+
+
+  cupertino_icons: ^0.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+
+
+  uses-material-design: true
+
+
+  fonts:
+    - family: FiraSans
+      fonts:
+        - asset: fonts/FiraSans-Regular.ttf
+    - family: Pacifico
+      fonts:
+        - asset: fonts/Pacifico-Regular.ttf
+    - family: SociaIcons
+      fonts:
+        - asset: fonts/SociaIcons.ttf
