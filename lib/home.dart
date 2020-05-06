@@ -4,8 +4,10 @@ import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/database/database_helper.dart';
 import 'package:idcard/user_data_creator.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'database/user.dart';
 import 'dart:io';
+import 'package:flushbar/flushbar.dart';
 
 class IdCreator extends StatefulWidget {
   @override
@@ -61,42 +63,37 @@ class _CreatorState extends State<IdCreator> {
       list.then((userData) {
         setState(() {
           this.data = userData;
-          if (data.isNotEmpty) {
-            for (int i = 0; i < data.length; i++) {
-              user = data[i];
-            }
-          }
+          if (data.isEmpty) {
+            user.color = defaultColor.value;
+            user.image = '';
+            user.name = '';
+            user.job = '';
+            user.phone = '';
+            user.mail = '';
+            user.link = '';
+            user.location = '';
+            user.twitter = '';
+            user.facebook = '';
+            user.instagram = '';
+            user.github = '';
+          } else
+            user = data[data.length - 1];
         });
       });
     });
-
     return data;
   }
 
-  //If the User object is first added send object with empty parameters, else take present object
-  _insertUser() {
-    if (data.isEmpty) {
-      user.color = defaultColor.value;
-      user.image = '';
-      user.name = '';
-      user.job = '';
-      user.phone = '';
-      user.mail = '';
-      user.link = '';
-      user.location = '';
-      user.twitter = '';
-      user.facebook = '';
-      user.instagram = '';
-      user.github = '';
+  _uriLauncher(String uri) async {
+    if (await canLaunch(uri)) {
+      await launch(uri);
+    } else {
+      throw 'Could not launch $uri';
     }
-    for (int i = 0; i < data.length; i++) {
-      user = data[i];
-    }
-    return user;
   }
 
   void _insert() async {
-    await _dbHelper.insert(_insertUser());
+    await _dbHelper.insert(user);
   }
 
   //Delete only long pressed Users parameter
@@ -119,34 +116,47 @@ class _CreatorState extends State<IdCreator> {
       body: _buildUserDataList(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
+          elevation: 2.0,
           backgroundColor: Colors.white,
-          child: Icon(
-            Icons.add,
-            size: 28,
-            color: user.color != null ? Color(user.color) : defaultColor,
-          ),
+          child: data.isEmpty
+              ? Icon(
+                  Icons.add,
+                  size: 28,
+                  color: user.color != null ? Color(user.color) : defaultColor,
+                )
+              : Icon(
+                  Icons.edit,
+                  size: 28,
+                  color: user.color != null ? Color(user.color) : defaultColor,
+                ),
           onPressed: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => UserDataCreator(_insertUser())));
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserDataCreator(
+                  user,
+                ),
+              ),
+            );
           }),
       bottomNavigationBar: BottomAppBar(
         color: user.color != null ? Color(user.color) : defaultColor,
+        shape: CircularNotchedRectangle(),
+        notchMargin: 6.0,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           mainAxisSize: MainAxisSize.max,
           children: [
             IconButton(
-              onPressed: () {},
-              icon: Icon(
+              onPressed: () => _bottomSheetMenuLeft(),
+              icon: const Icon(
                 Icons.add_circle_outline,
                 color: Colors.white,
               ),
             ),
             IconButton(
-              onPressed: () => _bottomSheetMenu(),
-              icon: Icon(
+              onPressed: () => _bottomSheetMenuRight(),
+              icon: const Icon(
                 Icons.more_vert,
                 color: Colors.white,
               ),
@@ -158,7 +168,7 @@ class _CreatorState extends State<IdCreator> {
   }
 
   //Menu shown when you tap 3 dots on appbar. You can change the height of the menu
-  void _bottomSheetMenu() {
+  void _bottomSheetMenuRight() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: false,
@@ -170,6 +180,25 @@ class _CreatorState extends State<IdCreator> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildDeleteButton(context),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  //Menu shown when you tap "+" on appbar. You can change the height of the menu
+  void _bottomSheetMenuLeft() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        return Container(
+          height: 100,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
               _buildColorPicker(context),
             ],
           ),
@@ -207,55 +236,134 @@ class _CreatorState extends State<IdCreator> {
           setState(() {
             defaultColor = color;
             user.color = defaultColor.value;
+            _insert();
           });
-          _insert();
           Navigator.pop(context);
         },
       ),
     );
   }
 
+  //Button delete on bottom sheet menu (3 dots)
   Widget _buildDeleteButton(BuildContext context) {
     return Container(
-      child: FloatingActionButton.extended(
+      child: FlatButton.icon(
+        splashColor: Colors.grey,
+        highlightColor: Colors.white,
         onPressed: () {
-          _delete(context);
           Navigator.pop(context);
+          _showAlertDialog();
         },
         label: Text(
           'Delete',
           style: TextStyle(color: Colors.black, fontSize: 16),
         ),
-        icon: Icon(
-          Icons.delete,
+        icon: const Icon(
+          Icons.delete_outline,
           color: Colors.black,
           size: 26,
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
       ),
     );
   }
 
+  void _flushBar(BuildContext context) {
+    Flushbar(
+      flushbarStyle: FlushbarStyle.FLOATING,
+      margin: EdgeInsets.all(20),
+      borderRadius: 8.0,
+      backgroundColor: Colors.white,
+      mainButton: FlatButton(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            const Radius.circular(20.0),
+          ),
+        ),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: const Text(
+          'Hide',
+          style: TextStyle(color: Colors.black, fontSize: 16.0),
+        ),
+      ),
+      messageText: const Text(
+        'All data was deleted',
+        style: TextStyle(color: Colors.black, fontSize: 14.0),
+      ),
+      duration: const Duration(seconds: 3),
+    )..show(context);
+  }
+
+  //Alert Dialog shown if user delete the data
+  Widget _buildAlertDialog() {
+    return AlertDialog(
+      title: Text('Delete app data?'),
+      content: Text(
+          'All this apps data will be deleted. This includes all informations, databases, etc.'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(20.0),
+        ),
+      ),
+      actions: [
+        FlatButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              const Radius.circular(20.0),
+            ),
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: user.color != null ? Color(user.color) : defaultColor,
+            ),
+          ),
+        ),
+        FlatButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              const Radius.circular(20.0),
+            ),
+          ),
+          onPressed: () {
+            _delete(context);
+            Navigator.pop(context);
+            _flushBar(context);
+          },
+          child: Text(
+            'OK',
+            style: TextStyle(
+              color: user.color != null ? Color(user.color) : defaultColor,
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  //Simply show AlertDialog
+  void _showAlertDialog() =>
+      showDialog(context: context, builder: (_) => _buildAlertDialog());
+
   // Cards with users data (phone number, name, etc.)
   Widget _buildUserDataList(BuildContext context) {
     return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 50.0),
       child: FutureBuilder(
           future: _updateFromDb(),
           builder: (BuildContext context, snapshot) {
-            if (snapshot.hasData) {
+            if (snapshot.hasData & data.isNotEmpty) {
               return ListView.builder(
                   itemCount: snapshot.data.length,
                   itemBuilder: (BuildContext context, int index) {
                     return _buildSingleTile(snapshot.data[index]);
                   });
-            } else {
-              return Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 1,
-                ),
-              );
-            }
+            } else
+              return _buildEmptyListView();
           }),
     );
   }
@@ -263,45 +371,58 @@ class _CreatorState extends State<IdCreator> {
   //Single tile for user data list
   Widget _buildSingleTile(User user) {
     return Column(
-      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Place where user can change his profile image
         user.image.isNotEmpty
-            ? CircleAvatar(
-                backgroundColor:
-                    user.color != null ? Color(user.color) : defaultColor,
-                radius: 60,
-                backgroundImage: FileImage(File(user.image)),
+            ? Container(
+                padding: EdgeInsets.symmetric(vertical: 20.0),
+                child: CircleAvatar(
+                  backgroundColor:
+                      user.color != null ? Color(user.color) : defaultColor,
+                  radius: 60,
+                  backgroundImage: FileImage(File(user.image)),
+                ),
               )
             : Container(),
+
+        //Name
         user.name.isNotEmpty
-            ? Text(
-                user.name,
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontFamily: 'Pacifico'),
+            ? Container(
+                padding: EdgeInsets.only(bottom: 20.0),
+                child: Text(
+                  user.name,
+                  style: TextStyle(
+                      fontSize: 34,
+                      color: Colors.white,
+                      fontFamily: 'Pacifico'),
+                ),
               )
             : Container(),
+
+        //Job
         user.job.isNotEmpty
             ? Text(
                 user.job.toUpperCase(),
                 style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     letterSpacing: 2.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               )
             : Container(),
+
         user.job.isNotEmpty
             ? Divider(
                 color: Colors.white,
                 endIndent: 40,
                 indent: 40,
                 thickness: 1,
+                height: 50,
               )
             : Container(),
+
+        //Phone
         user.phone.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -314,16 +435,20 @@ class _CreatorState extends State<IdCreator> {
                   title: Text(
                     user.phone,
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
+                  onTap: () {
+                    _uriLauncher('tel:' + user.phone);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               )
             : Container(),
+
+        //Mail
         user.mail.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -335,14 +460,51 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.mail,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher('mailto: ' +
+                        user.mail +
+                        '?subject=Write a subject you interested in, please&body=');
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               )
             : Container(),
+
+        //Location
+        user.location.isNotEmpty
+            ? Card(
+                color: Colors.white,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.location_city,
+                    color:
+                        user.color != null ? Color(user.color) : defaultColor,
+                  ),
+                  title: Text(
+                    user.location,
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () {
+                    _uriLauncher(
+                        'https://www.google.com/maps/search/?api=1&query=' +
+                            user.location);
+                  },
+                  onLongPress: () {
+                    // _deleteSingleTile(context, user.id);
+                  },
+                ),
+              )
+            : Container(),
+
+        //Link
         user.link.isEmpty
             ? Container()
             : Card(
@@ -355,32 +517,20 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.link,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher(user.link);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               ),
-        user.location.isNotEmpty
-            ? Card(
-                color: Colors.white,
-                child: ListTile(
-                  leading: Icon(
-                    Icons.location_city,
-                    color:
-                        user.color != null ? Color(user.color) : defaultColor,
-                  ),
-                  title: Text(
-                    user.location,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  onLongPress: () {
-                    // _deleteSingleTile(context, user.id);
-                  },
-                ),
-              )
-            : Container(),
+
+        //Twitter
         user.twitter.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -392,14 +542,21 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.twitter,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher(user.twitter);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               )
             : Container(),
+
+        //Facebook
         user.facebook.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -411,14 +568,21 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.facebook,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher(user.facebook);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               )
             : Container(),
+
+        //Instagram
         user.instagram.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -430,14 +594,21 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.instagram,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher(user.instagram);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
                 ),
               )
             : Container(),
+
+        //Git
         user.github.isNotEmpty
             ? Card(
                 color: Colors.white,
@@ -449,8 +620,13 @@ class _CreatorState extends State<IdCreator> {
                   ),
                   title: Text(
                     user.github,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+                  onTap: () {
+                    _uriLauncher(user.github);
+                  },
                   onLongPress: () {
                     // _deleteSingleTile(context, user.id);
                   },
@@ -460,4 +636,21 @@ class _CreatorState extends State<IdCreator> {
       ],
     );
   }
+
+  Widget _buildProgressBar() {
+    return Center(
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        backgroundColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildEmptyListView() => Center(
+        child: Image(
+          width: 250,
+          height: 250,
+          image: AssetImage('images/id_card_empty.png'),
+        ),
+      );
 }

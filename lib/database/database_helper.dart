@@ -92,6 +92,14 @@ class DataBaseHelper {
     return result;
   }
 
+  Future<int> getCount() async {
+    Database db = await this.database;
+    List<Map<String, dynamic>> x =
+        await db.rawQuery('SELECT COUNT (*) from $dataTable');
+    int result = Sqflite.firstIntValue(x);
+    return result;
+  }
+
   Future<List<User>> getUserList() async {
     var userMapList = await getDataMapList();
     int count = userMapList.length;

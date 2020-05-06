@@ -2,23 +2,25 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:idcard/database/database_helper.dart';
 import 'package:idcard/custom/socia_icons_icons.dart';
+import 'package:idcard/home.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'database/user.dart';
+import 'package:flushbar/flushbar.dart';
 
 class UserDataCreator extends StatefulWidget {
   final User user;
-  //final Color pickedColor;
 
-  UserDataCreator(this.user); //, this.pickedColor);
+  UserDataCreator(this.user);
 
   @override
   State<StatefulWidget> createState() {
-    return _CreatorState(this.user); //, this.pickedColor);
+    return _CreatorState(this.user);
   }
 }
 
@@ -32,9 +34,19 @@ class _CreatorState extends State<UserDataCreator> {
   //Default path to the local app directory
   String path;
 
-  //Color from color picker
-  Color pickedColor;
+  //Check if user input some text in TextFields
+  bool _visibleName = false;
+  bool _visibleJob = false;
+  bool _visiblePhone = false;
+  bool _visibleMail = false;
+  bool _visibleLocation = false;
+  bool _visibleLink = false;
+  bool _visibleTwitter = false;
+  bool _visibleFacebook = false;
+  bool _visibleInstagram = false;
+  bool _visibleGit = false;
 
+  //Constructor take User object from IdCreator class
   _CreatorState(this.user);
 
   //To retrieve the text a user has entered into a text field using TextEditingController
@@ -49,8 +61,32 @@ class _CreatorState extends State<UserDataCreator> {
   final instagramController = TextEditingController();
   final githubController = TextEditingController();
 
+  //Instance of DbHelper class
+  DataBaseHelper _dbHelper = DataBaseHelper();
+
+  //List of Users data
+  List<User> list;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (list == null) {
+      list = List<User>();
+    }
+    _getPath();
+
+    _updateListFromDb();
+
+    _setUserToController();
+
+    _addListener();
+  }
+
   @override
   void dispose() {
+    // Clean up the controller when the widget is removed from the widget tree.
+    // This also removes the _printLatestValue listener.
     jobController.dispose();
     nameController.dispose();
     phoneController.dispose();
@@ -62,24 +98,6 @@ class _CreatorState extends State<UserDataCreator> {
     instagramController.dispose();
     githubController.dispose();
     super.dispose();
-  }
-
-  //Instance of DbHelper class
-  DataBaseHelper _dbHelper = DataBaseHelper();
-
-  //List of Users data
-  List<User> list;
-
-  @override
-  void initState() {
-    if (list == null) {
-      list = List<User>();
-    }
-    _getPath();
-    _updateListFromDb();
-    _setUserToController();
-
-    super.initState();
   }
 
   //Here we get list from our database
@@ -96,6 +114,7 @@ class _CreatorState extends State<UserDataCreator> {
     return list;
   }
 
+  //Update User object with new parameters
   User _updateUser() {
     if (user.image == null) {
       user.image = '';
@@ -117,6 +136,7 @@ class _CreatorState extends State<UserDataCreator> {
     return user;
   }
 
+  //Set data from database to particular TextFields when User want to Edit data
   _setUserToController() {
     nameController.text = user.name;
     jobController.text = user.job;
@@ -130,8 +150,127 @@ class _CreatorState extends State<UserDataCreator> {
     githubController.text = user.github;
   }
 
+  //Clear all fields
+  _clearController() {
+    nameController.clear();
+    jobController.clear();
+    phoneController.clear();
+    mailController.clear();
+    linkController.clear();
+    locationController.clear();
+    twitterController.clear();
+    facebookController.clear();
+    instagramController.clear();
+    githubController.clear();
+  }
+
+  //Check if lengths of text in TextFields is > 0
+  _addListener() {
+    nameController.addListener(() {
+      if (nameController.text.length > 0) {
+        setState(() {
+          _visibleName = true;
+        });
+      } else
+        setState(() {
+          _visibleName = false;
+        });
+    });
+    jobController.addListener(() {
+      if (jobController.text.length > 0) {
+        setState(() {
+          _visibleJob = true;
+        });
+      } else
+        setState(() {
+          _visibleJob = false;
+        });
+    });
+    phoneController.addListener(() {
+      if (phoneController.text.length > 0) {
+        setState(() {
+          _visiblePhone = true;
+        });
+      } else
+        setState(() {
+          _visiblePhone = false;
+        });
+    });
+    mailController.addListener(() {
+      if (mailController.text.length > 0) {
+        setState(() {
+          _visibleMail = true;
+        });
+      } else
+        setState(() {
+          _visibleMail = false;
+        });
+    });
+    linkController.addListener(() {
+      if (linkController.text.length > 0) {
+        setState(() {
+          _visibleLink = true;
+        });
+      } else
+        setState(() {
+          _visibleLink = false;
+        });
+    });
+    locationController.addListener(() {
+      if (locationController.text.length > 0) {
+        setState(() {
+          _visibleLocation = true;
+        });
+      } else
+        setState(() {
+          _visibleLocation = false;
+        });
+    });
+    twitterController.addListener(() {
+      if (twitterController.text.length > 0) {
+        setState(() {
+          _visibleTwitter = true;
+        });
+      } else
+        setState(() {
+          _visibleTwitter = false;
+        });
+    });
+    facebookController.addListener(() {
+      if (facebookController.text.length > 0) {
+        setState(() {
+          _visibleFacebook = true;
+        });
+      } else
+        setState(() {
+          _visibleFacebook = false;
+        });
+    });
+    instagramController.addListener(() {
+      if (instagramController.text.length > 0) {
+        setState(() {
+          _visibleInstagram = true;
+        });
+      } else
+        setState(() {
+          _visibleInstagram = false;
+        });
+    });
+    githubController.addListener(() {
+      if (githubController.text.length > 0) {
+        setState(() {
+          _visibleGit = true;
+        });
+      } else
+        setState(() {
+          _visibleGit = false;
+        });
+    });
+  }
+
   void _update() async {
     await _dbHelper.insert(_updateUser());
+    print('updateeeed ' + user.name);
   }
 
   //Get directory where we can duplicate selected file.
@@ -152,69 +291,169 @@ class _CreatorState extends State<UserDataCreator> {
     var fileName = basename(image.path);
     //Copy image to the app directory
     final File localImage = await image.copy('$path/$fileName');
-    print(image);
-    print('$path/$fileName');
     //Save image/file path as string to the local database
     setState(() {
       _image = localImage;
       user.image = _image.path;
+      _update();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton(
-        child: Text(
-          'Save',
-          style: TextStyle(color: Color(user.color), fontSize: 16),
-        ),
-        backgroundColor: Colors.white,
-        onPressed: () {
-          _update();
-          Navigator.pop(context);
-        },
+      appBar: AppBar(
+        backgroundColor: Color(user.color),
+        actions: [
+          list.isNotEmpty
+              ? FlatButton(
+                  shape: CircleBorder(),
+                  onPressed: () {
+                    if (list.isNotEmpty) {
+                      _clearController();
+                      _flushBar(
+                          context, 'Undo', 'Data cleared successfully', true);
+                    } else
+                      return;
+                  },
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              : Container(),
+          FlatButton(
+            shape: CircleBorder(),
+            onPressed: () {
+              _update();
+              _flushBar(context, 'Home', 'Data saved successfully', false);
+            },
+            child: Text(
+              'Save',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
-        child: Container(
-          child: _buildUserCreator(context),
-        ),
-      ),
+          child: SingleChildScrollView(
+        child: _buildTile(context),
+      )),
     );
   }
 
-  Widget _buildUserCreator(BuildContext context) {
-    return FutureBuilder(
-      future: _updateListFromDb(),
-      builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-        return ListView.builder(
-          itemCount: 1,
-          itemBuilder: (BuildContext context, int index) {
-            return _buildTile(context);
+  //Alert Dialog shown if user delete the data
+  Widget _buildAlertDialog(BuildContext context) {
+    return AlertDialog(
+      title: Text('?'),
+      content: Text(
+          'All this apps data will be deleted. This includes all informations, databases, etc.'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(20.0),
+        ),
+      ),
+      actions: [
+        FlatButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              const Radius.circular(20.0),
+            ),
+          ),
+          onPressed: () {
+            Navigator.pop(context);
           },
-        );
-      },
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: Color(user.color),
+            ),
+          ),
+        ),
+        FlatButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              const Radius.circular(20.0),
+            ),
+          ),
+          onPressed: () {},
+          child: Text(
+            'OK',
+            style: TextStyle(
+              color: Color(user.color),
+            ),
+          ),
+        )
+      ],
     );
+  }
+
+  //Pop up notification when user interact with app
+  void _flushBar(
+      BuildContext context, String title, String message, bool flag) {
+    Flushbar(
+      flushbarStyle: FlushbarStyle.FLOATING,
+      margin: EdgeInsets.all(20),
+      borderRadius: 8.0,
+      backgroundColor: Color(user.color),
+      messageText: Text(
+        message,
+        style: TextStyle(color: Colors.white, fontSize: 14.0),
+      ),
+      duration: const Duration(seconds: 3),
+      mainButton: FlatButton(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            const Radius.circular(20.0),
+          ),
+        ),
+        onPressed: () {
+          if (flag) {
+            _setUserToController();
+            Navigator.pop(context);
+            return;
+          } else if (flag == false) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IdCreator(),
+              ),
+            );
+          }
+        },
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 16.0, color: Colors.white),
+        ),
+      ),
+    )..show(context);
   }
 
   Widget _buildTile(context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(10.0, 10.0, 70, 80),
+      alignment: Alignment.center,
+      padding: EdgeInsets.fromLTRB(30.0, 10.0, 30.0, 80.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Place where user can change his profile image
           Container(
             alignment: Alignment.center,
-            padding: EdgeInsets.symmetric(
-              vertical: 20.0,
-            ),
+            padding: EdgeInsets.only(top: 30.0, bottom: 30),
             child: CircleAvatar(
-              backgroundImage:
-                  user.image.isEmpty ? null : FileImage(File(user.image)),
+              backgroundImage: user.image.isEmpty
+                  ? null
+                  : FileImage(
+                      File(user.image),
+                    ),
               backgroundColor: Color(user.color),
-              radius: 40,
+              radius: 50,
               child: GestureDetector(
                 child: user.image.isEmpty
                     ? Icon(
@@ -232,9 +471,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           // Name
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               Icons.account_circle,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -243,9 +484,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Full name',
+                  suffixIcon: _visibleName
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              nameController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -253,9 +507,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Job description container
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               Icons.work,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -264,9 +520,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: jobController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Job description',
+                  suffixIcon: _visibleJob
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              jobController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -274,9 +543,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Phone number
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               Icons.phone,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -286,9 +557,22 @@ class _CreatorState extends State<UserDataCreator> {
                 keyboardType: TextInputType.number,
                 controller: phoneController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Phone',
+                  suffixIcon: _visiblePhone
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              phoneController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -296,9 +580,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Mail
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               Icons.mail,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -308,39 +594,34 @@ class _CreatorState extends State<UserDataCreator> {
                 keyboardType: TextInputType.emailAddress,
                 controller: mailController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
-                  labelText: 'Mail',
+                  labelText: 'Email',
+                  suffixIcon: _visibleMail
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              mailController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
           ),
 
-          //Link
-          ListTile(
-            leading: Icon(
-              Icons.link,
-              color: Color(user.color),
-            ),
-            title: Theme(
-              data: Theme.of(context).copyWith(
-                primaryColor: Color(user.color),
-              ),
-              child: TextField(
-                controller: linkController,
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
-                  border: OutlineInputBorder(),
-                  labelText: 'Link',
-                ),
-              ),
-            ),
-          ),
           //Location
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               Icons.location_city,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -349,9 +630,58 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: locationController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Address',
+                  suffixIcon: _visibleLocation
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              locationController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
+                ),
+              ),
+            ),
+          ),
+
+          //Link
+          ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
+            leading: Icon(
+              Icons.link,
+              color: Color(user.color),
+              size: 22.0,
+            ),
+            title: Theme(
+              data: Theme.of(context).copyWith(
+                primaryColor: Color(user.color),
+              ),
+              child: TextField(
+                controller: linkController,
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                  border: OutlineInputBorder(),
+                  labelText: 'Link',
+                  suffixIcon: _visibleLink
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              linkController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -359,9 +689,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Twitter
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               SociaIcons.twitter,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -370,9 +702,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: twitterController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Twitter',
+                  suffixIcon: _visibleTwitter
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              twitterController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -380,9 +725,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Facebook
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               SociaIcons.facebook,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -391,9 +738,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: facebookController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Facebook',
+                  suffixIcon: _visibleFacebook
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              facebookController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -401,9 +761,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Instagram
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               SociaIcons.instagram,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -412,9 +774,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: instagramController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Instagram',
+                  suffixIcon: _visibleInstagram
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              instagramController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
@@ -422,9 +797,11 @@ class _CreatorState extends State<UserDataCreator> {
 
           //Github
           ListTile(
+            contentPadding: EdgeInsets.only(right: 50, bottom: 5),
             leading: Icon(
               SociaIcons.github,
               color: Color(user.color),
+              size: 22.0,
             ),
             title: Theme(
               data: Theme.of(context).copyWith(
@@ -433,9 +810,22 @@ class _CreatorState extends State<UserDataCreator> {
               child: TextField(
                 controller: githubController,
                 decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(),
                   labelText: 'Github',
+                  suffixIcon: _visibleGit
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              githubController.text = '';
+                            });
+                          },
+                        )
+                      : Container(
+                          height: 1,
+                          width: 1,
+                        ),
                 ),
               ),
             ),
