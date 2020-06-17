@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:idcard/database/database.dart';
 import 'package:idcard/models/user.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthUser {
   //Firebase auth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   //Store device token
   String idToken;
 
@@ -30,13 +32,10 @@ class AuthUser {
 
       if (user.isEmailVerified) {
         //Get user token for fcm
-        user.getIdToken().then(
-          (value) {
-            if (user != null) {
-              idToken = value.token;
-            }
-          },
-        );
+
+        if (user != null) {
+          idToken = await _firebaseMessaging.getToken();
+        }
 
         //Take a document of specific user based on user ID and check if exist or not
         final snapShot = await Firestore.instance

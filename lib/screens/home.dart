@@ -1,13 +1,16 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:idcard/custom/flushbar.dart';
 import 'package:idcard/custom/loading.dart';
 import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/database/database.dart';
+import 'package:idcard/dialog/alert_dialog.dart';
 import 'package:idcard/lists/home_user_info.dart';
 import 'package:idcard/models/user.dart';
+import 'package:idcard/screens/empty_screen.dart';
 import 'package:idcard/screens/favorites.dart';
+import 'package:idcard/screens/search.dart';
 import 'package:idcard/screens/user_data_creator.dart';
 import 'package:idcard/screens/wrapper.dart';
 import 'package:idcard/service/auth.dart';
@@ -22,7 +25,10 @@ class IdCardViewer extends StatefulWidget {
 
 class _CreatorState extends State<IdCardViewer> {
   final AuthUser _auth = AuthUser();
-  final FlushBar _flushBar = FlushBar();
+
+  final DialogPopUp _dialogPopUp = DialogPopUp();
+
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
   //List of colors. You can change on your own
   List<Color> colors = [
@@ -58,6 +64,48 @@ class _CreatorState extends State<IdCardViewer> {
   //A default Name font style
   String defaultFont = 'Pacifico';
 
+  UserData userData;
+
+  @override
+  void initState() {
+    // For iOS request permission first.
+    _firebaseMessaging.requestNotificationPermissions();
+    _firebaseMessaging.configure(
+      //App is in foreground and you receive a notification
+      onMessage: (Map<String, dynamic> message) async {
+        print('onMessage: $message');
+
+        _showAlertDialog(userData, message['notification']['title'],
+            message['notification']['body'], 4);
+      },
+      //Open app clicking on push notification
+      onLaunch: (Map<String, dynamic> message) async {
+        print('onMessage: $message');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Favorites(
+              color: Color(userData.color),
+            ),
+          ),
+        );
+      },
+      //App is in background
+      onResume: (Map<String, dynamic> message) async {
+        print('onMessage: $message');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Favorites(
+              color: Color(userData.color),
+            ),
+          ),
+        );
+      },
+    );
+    super.initState();
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   //Build the UI
 
@@ -70,7 +118,7 @@ class _CreatorState extends State<IdCardViewer> {
             stream: DatabaseService(id: user.id).userData,
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (snapshot.hasData) {
-                UserData userData = snapshot.data;
+                userData = snapshot.data;
                 return Scaffold(
                   backgroundColor: userData.color != null
                       ? Color(userData.color)
@@ -78,24 +126,14 @@ class _CreatorState extends State<IdCardViewer> {
                   body: SafeArea(
                     child: SingleChildScrollView(
                       child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topRight,
-                            end: Alignment.bottomLeft,
-                            colors: [
-                              Color(userData.color),
-                              Color(userData.color),
-                              Color(userData.color),
-                            ],
-                          ),
-                        ),
                         padding: EdgeInsets.symmetric(
-                            horizontal: 10.0, vertical: 50.0),
+                            horizontal: 20.0, vertical: 50.0),
                         child: userData.name.isNotEmpty
                             ? HomeUserList()
-                            : _buildEmptyListView(
+                            : EmptyListView().buildEmptyListView(
                                 Color(userData.color),
-                              ),
+                                "It's a little bit lonely here...",
+                                "Try to add some content!"),
                       ),
                     ),
                   ),
@@ -103,6 +141,13 @@ class _CreatorState extends State<IdCardViewer> {
                       FloatingActionButtonLocation.centerDocked,
                   floatingActionButton: FloatingActionButton(
                       elevation: 2.0,
+                      shape: CircleBorder(
+                        side: BorderSide(
+                            color: userData.color.toString().isNotEmpty
+                                ? Color(userData.color)
+                                : defaultColor,
+                            width: 1.0),
+                      ),
                       backgroundColor: Colors.white,
                       child: userData.name.isEmpty
                           ? Icon(
@@ -127,6 +172,24 @@ class _CreatorState extends State<IdCardViewer> {
                           ),
                         );
                       }),
+                  appBar: AppBar(
+                    elevation: 0.0,
+                    automaticallyImplyLeading: false,
+                    actions: [
+                      IconButton(
+                        icon: Icon(SociaIcons.search),
+                        onPressed: () {
+                          showSearch(
+                            context: context,
+                            delegate: Search(),
+                          );
+                        },
+                      ),
+                    ],
+                    backgroundColor: userData.color.toString().isNotEmpty
+                        ? Color(userData.color)
+                        : defaultColor,
+                  ),
                   bottomNavigationBar: BottomAppBar(
                     color: userData.color.toString().isNotEmpty
                         ? Color(userData.color)
@@ -368,91 +431,13 @@ class _CreatorState extends State<IdCardViewer> {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-  //Alert Dialog shown if user delete the data
-  Widget _buildAlertDialog(
-      UserData userData, String title, String content, int flag) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(20.0),
-        ),
-      ),
-      actions: [
-        FlatButton(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              const Radius.circular(20.0),
-            ),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            'Cancel',
-            style: TextStyle(
-              color: Color(userData.color),
-            ),
-          ),
-        ),
-        FlatButton(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              const Radius.circular(20.0),
-            ),
-          ),
-          onPressed: () async {
-            if (flag == 1) {
-              await DatabaseService(id: userData.id).setUserData(
-                  false,
-                  4278228616,
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '',
-                  '');
-              Navigator.pop(context);
-              _flushBar.flushBar(context, 'All data was deleted', 'Hide',
-                  Colors.white, Colors.black, true);
-              return;
-            } else if (flag == 2) {
-              await DatabaseService(id: userData.id).updateUserPrivacy(true);
-              Navigator.pop(context);
-              _flushBar.flushBar(context, 'Data shared successfully', 'Hide',
-                  Colors.white, Colors.black, true);
-            } else if (flag == 3) {
-              await DatabaseService(id: userData.id).updateUserPrivacy(false);
-              Navigator.pop(context);
-              _flushBar.flushBar(context, 'Data hide successfully', 'Hide',
-                  Colors.white, Colors.black, true);
-            }
-          },
-          child: Text(
-            'OK',
-            style: TextStyle(
-              color: Color(userData.color),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
   //Simply show AlertDialog
   void _showAlertDialog(
           UserData userData, String title, String content, int flag) =>
       showDialog(
         context: context,
-        builder: (_) => _buildAlertDialog(userData, title, content, flag),
+        builder: (_) => _dialogPopUp.buildAlertDialog(context, userData.color,
+            userData.id, userData.token, title, content, flag),
       );
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -533,51 +518,4 @@ class _CreatorState extends State<IdCardViewer> {
       ),
     );
   }
-
-///////////////////////////////////////////////////////////////////////////////////////
-  //If list of data is Empty set Empty Widget with image
-  Widget _buildEmptyListView(Color color) => Center(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 40),
-            ),
-            Container(
-              height: 240,
-              width: 240,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[200],
-              ),
-              child: Icon(
-                Icons.perm_identity,
-                size: 100,
-                color: color,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 50.0),
-              child: Text(
-                "It's a little bit lonely here...",
-                style: TextStyle(
-                  color: Colors.grey[200],
-                  fontSize: 26.0,
-                  fontFamily: 'FredokaOne',
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 15.0),
-              child: Text(
-                "Try to add some content!",
-                style: TextStyle(
-                  color: Colors.grey[300],
-                  fontSize: 24.0,
-                  fontFamily: 'FredokaOne',
-                ),
-              ),
-            )
-          ],
-        ),
-      );
 }

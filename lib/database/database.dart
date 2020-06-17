@@ -115,8 +115,6 @@ class DatabaseService {
           .document(token)
           .get()
           .then((doc) {
-        print(doc.exists);
-        print(token);
         if (doc.exists)
           exists = true;
         else

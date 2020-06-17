@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:idcard/custom/flushbar.dart';
 import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/database/database.dart';
+import 'package:idcard/dialog/alert_dialog.dart';
 import 'package:idcard/models/favorites_users.dart';
 import 'package:idcard/models/user.dart';
+import 'package:idcard/screens/empty_screen.dart';
 import 'package:idcard/user_image/empty_image.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,7 +15,7 @@ class FavoritesList extends StatefulWidget {
 }
 
 class _FavoritesListState extends State<FavoritesList> {
-  final FlushBar _flushBar = FlushBar();
+  final DialogPopUp _dialogPopUp = DialogPopUp();
   //A default color of the screen
   Color defaultColor = Colors.teal;
   //A default Name font style
@@ -39,7 +40,8 @@ class _FavoritesListState extends State<FavoritesList> {
             itemBuilder: (BuildContext context, int index) {
               return _buildSingleTile(favoritesUsers[index]);
             })
-        : _buildEmptyListView(Colors.grey[300]);
+        : EmptyListView().buildEmptyListView(Colors.grey[300],
+            "No favorite jet...", "Try to search some users!");
   }
 
 //Single tile for user data list
@@ -78,9 +80,9 @@ class _FavoritesListState extends State<FavoritesList> {
                               _showAlertDialog(
                                   user,
                                   users,
-                                  'Unlike ${users.name}?',
+                                  '${users.name}?',
                                   'Data will be deleted from your list of favorites',
-                                  1);
+                                  5);
                             } else {
                               await DatabaseService(id: user.id)
                                   .addFavoriteUsers(
@@ -386,7 +388,10 @@ class _FavoritesListState extends State<FavoritesList> {
                                                 : defaultColor,
                                           ),
                                           title: Text(
-                                            '******' + users.phone.substring(6),
+                                            users.phone.length > 6
+                                                ? '******' +
+                                                    users.phone.substring(6)
+                                                : '******',
                                             style: TextStyle(
                                               fontSize: 16,
                                             ),
@@ -544,114 +549,12 @@ class _FavoritesListState extends State<FavoritesList> {
           );
   }
 
-  //Alert Dialog
-  Widget _buildAlertDialog(
-      User user, FavoriteUsers users, String title, String content, int flag) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(20.0),
-        ),
-      ),
-      actions: [
-        FlatButton(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              const Radius.circular(20.0),
-            ),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            'Cancel',
-            style: TextStyle(
-              color: Color(users.color),
-            ),
-          ),
-        ),
-        FlatButton(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              const Radius.circular(20.0),
-            ),
-          ),
-          onPressed: () async {
-            if (flag == 1) {
-              Navigator.pop(context);
-              await DatabaseService(id: user.id)
-                  .deleteFavoriteUser(users.token);
-              return;
-            } else if (flag == 2) {
-              Navigator.pop(context);
-              _flushBar.flushBar(context, 'Data shared successfully', 'Hide',
-                  Colors.white, Colors.black, true);
-            } else if (flag == 3) {
-              Navigator.pop(context);
-              _flushBar.flushBar(context, 'Data hide successfully', 'Hide',
-                  Colors.white, Colors.black, true);
-            }
-          },
-          child: Text(
-            'OK',
-            style: TextStyle(
-              color: Color(users.color),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
   //Simply show AlertDialog
   void _showAlertDialog(User user, FavoriteUsers users, String title,
           String content, int flag) =>
       showDialog(
         context: context,
-        builder: (_) => _buildAlertDialog(user, users, title, content, flag),
-      );
-
-  //If list of data is Empty set Empty Widget with image
-  Widget _buildEmptyListView(Color color) => Center(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 150),
-            ),
-            Container(
-              height: 140,
-              width: 240,
-              child: Icon(
-                Icons.insert_drive_file,
-                size: 100,
-                color: color,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 50.0),
-              child: Text(
-                "No favorite jet...",
-                style: TextStyle(
-                  color: Colors.grey[300],
-                  fontSize: 26.0,
-                  fontFamily: 'FredokaOne',
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 15.0),
-              child: Text(
-                "Try to search some users!",
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 24.0,
-                  fontFamily: 'FredokaOne',
-                ),
-              ),
-            )
-          ],
-        ),
+        builder: (_) => _dialogPopUp.buildAlertDialog(
+            context, users.color, user.id, users.token, title, content, flag),
       );
 }

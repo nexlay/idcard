@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:idcard/custom/loading.dart';
-
 import 'package:idcard/database/database.dart';
-
 import 'package:idcard/models/user.dart';
-import 'file:///D:/flutter_projects/idcard/lib/user_image/user_image_picker.dart';
+import 'package:idcard/user_image/user_image_picker.dart';
 import 'package:provider/provider.dart';
 
 class EmptyUserImage extends StatelessWidget {

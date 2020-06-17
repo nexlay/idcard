@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/database/database.dart';
 import 'package:idcard/lists/favorites_list.dart';
 import 'package:idcard/models/favorites_users.dart';
 import 'package:idcard/models/user.dart';
-import 'package:idcard/screens/search.dart';
+import 'package:idcard/screens/search_favorite.dart';
 import 'package:provider/provider.dart';
 
 class Favorites extends StatelessWidget {
@@ -18,14 +19,15 @@ class Favorites extends StatelessWidget {
       value: DatabaseService(id: user.id).favoriteUser,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Favorite'),
+          elevation: 0.0,
+          title: Text('Favorites'),
           actions: [
             IconButton(
-              icon: Icon(Icons.search),
+              icon: Icon(SociaIcons.search),
               onPressed: () {
                 showSearch(
                   context: context,
-                  delegate: Search(),
+                  delegate: SearchFavorites(),
                 );
               },
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:idcard/custom/flushbar.dart';
+import 'file:///D:/flutter_projects/idcard/lib/dialog/flushbar.dart';
 import 'package:idcard/custom/loading.dart';
 import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/service/auth.dart';
