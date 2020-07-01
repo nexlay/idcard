@@ -219,6 +219,12 @@ class _CreatorState extends State<UserDataCreator> {
             _setUserToController(userData);
             return Scaffold(
               appBar: AppBar(
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back_ios),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
                 backgroundColor: userData.color.toString().isNotEmpty
                     ? Color(userData.color)
                     : defaultColor,

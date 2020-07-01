@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:idcard/custom/loading.dart';
 import 'package:idcard/custom/socia_icons_icons.dart';
 import 'package:idcard/database/database.dart';
 import 'package:idcard/dialog/alert_dialog.dart';
-import 'package:idcard/models/favorites_users.dart';
+import 'package:idcard/models/search_user.dart';
 import 'package:idcard/models/user.dart';
 import 'package:idcard/screens/empty_screen.dart';
 import 'package:idcard/user_image/empty_image.dart';
@@ -10,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FavoritesList extends StatefulWidget {
+  final String id;
+  FavoritesList({this.id});
   @override
   _FavoritesListState createState() => _FavoritesListState();
 }
@@ -21,7 +24,10 @@ class _FavoritesListState extends State<FavoritesList> {
   //A default Name font style
   String defaultFont = 'Pacifico';
 
-  bool isFavorite = false;
+  //List of favorites users tokens
+  List<String> token = [];
+  //Favorites users objects list
+  List<SearchUsers> favoriteList = [];
 
   _uriLauncher(String uri) async {
     if (await canLaunch(uri)) {
@@ -32,21 +38,44 @@ class _FavoritesListState extends State<FavoritesList> {
   }
 
   @override
+  void initState() {
+    DatabaseService(id: widget.id).getFavoritesTokens().then((tokens) {
+      setState(() {
+        token = tokens;
+      });
+    });
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final favoritesUsers = Provider.of<List<FavoriteUsers>>(context) ?? [];
-    return favoritesUsers.isNotEmpty
-        ? ListView.builder(
-            itemCount: favoritesUsers.length,
-            itemBuilder: (BuildContext context, int index) {
-              return _buildSingleTile(favoritesUsers[index]);
-            })
-        : EmptyListView().buildEmptyListView(Colors.grey[300],
-            "No favorite jet...", "Try to search some users!");
+    final user = Provider.of<User>(context);
+    final favorites = Provider.of<List<SearchUsers>>(context) ?? [];
+
+    if (favorites.isNotEmpty) {
+      for (int i = 0; i < token.length; i++) {
+        favorites.forEach((element) {
+          if (token[i] == element.token) {
+            favoriteList.add(element);
+          }
+        });
+      }
+    } else
+      return Loading();
+
+    return ListView.builder(
+        itemCount: token.length,
+        itemBuilder: (BuildContext context, int index) {
+          if (favoriteList.isNotEmpty) {
+            return _buildSingleTile(favoriteList[index], user);
+          } else
+            return EmptyListView().buildEmptyListView(Colors.grey[300],
+                "No favorite jet...", "Try to search some users!");
+        });
   }
 
 //Single tile for user data list
-  Widget _buildSingleTile(FavoriteUsers users) {
-    final user = Provider.of<User>(context);
+  Widget _buildSingleTile(SearchUsers users, User user) {
     return users.shared == false
         ? Container(
             height: 1,
@@ -74,9 +103,9 @@ class _FavoritesListState extends State<FavoritesList> {
                       children: [
                         IconButton(
                           icon: Icon(Icons.star),
-                          color: users.favorite ? Colors.red : Colors.white,
+                          color: users.shared ? Colors.red : Colors.white,
                           onPressed: () async {
-                            if (users.favorite) {
+                            if (users.shared) {
                               _showAlertDialog(
                                   user,
                                   users,
@@ -84,25 +113,6 @@ class _FavoritesListState extends State<FavoritesList> {
                                   'Data will be deleted from your list of favorites',
                                   5);
                             } else {
-                              await DatabaseService(id: user.id)
-                                  .addFavoriteUsers(
-                                      users.shared,
-                                      false,
-                                      users.color,
-                                      users.token,
-                                      users.font,
-                                      users.image,
-                                      users.name,
-                                      users.job,
-                                      users.phone,
-                                      users.mail,
-                                      users.location,
-                                      users.link,
-                                      users.twitter,
-                                      users.facebook,
-                                      users.instagram,
-                                      users.github);
-
                               await DatabaseService(id: user.id)
                                   .updateFavoriteUser(true, users.token);
                             }
@@ -174,7 +184,7 @@ class _FavoritesListState extends State<FavoritesList> {
                           )
                         : Container(),
 
-                    users.favorite
+                    users.shared
                         ? Column(
                             children: [
                               //Phone
@@ -432,13 +442,16 @@ class _FavoritesListState extends State<FavoritesList> {
                                                 ? Color(users.color)
                                                 : defaultColor,
                                           ),
-                                          title: Text(
-                                            '******' +
-                                                users.location.substring(15),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
+                                          title: users.location.length > 15
+                                              ? Text(
+                                                  '******' +
+                                                      users.location
+                                                          .substring(15),
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                )
+                                              : Text('******'),
                                         ),
                                       )
                                     : Container(),
@@ -550,7 +563,7 @@ class _FavoritesListState extends State<FavoritesList> {
   }
 
   //Simply show AlertDialog
-  void _showAlertDialog(User user, FavoriteUsers users, String title,
+  void _showAlertDialog(User user, SearchUsers users, String title,
           String content, int flag) =>
       showDialog(
         context: context,

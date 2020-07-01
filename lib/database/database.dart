@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:idcard/models/favorites_users.dart';
+import 'package:idcard/models/favorite_user.dart';
 import 'package:idcard/models/search_user.dart';
 import 'package:idcard/models/user.dart';
 
 class DatabaseService {
   final String id;
-  DatabaseService({this.id});
+  final List<String> token;
+  DatabaseService({this.id, this.token});
+
   //A reference to our collection of Users data in Firestore
   final CollectionReference usersCollection =
       Firestore.instance.collection('idcard_users');
@@ -65,43 +67,18 @@ class DatabaseService {
 
   //Add new collection of favorite users when favorite button clicked
   Future addFavoriteUsers(
-      bool shared,
-      bool favorite,
-      int color,
-      String token,
-      String font,
-      String image,
-      String name,
-      String job,
-      String phone,
-      String mail,
-      String location,
-      String link,
-      String twitter,
-      String facebook,
-      String instagram,
-      String github) async {
+    String followed,
+    String token,
+    String follower,
+  ) async {
     return await usersCollection
         .document(id)
         .collection('favorites')
         .document(token)
         .setData({
-      'shared': shared,
-      'favorite': favorite,
-      'color': color,
       'token': token,
-      'font': font,
-      'image': image,
-      'name': name,
-      'job': job,
-      'phone': phone,
-      'mail': mail,
-      'link': link,
-      'location': location,
-      'twitter': twitter,
-      'facebook': facebook,
-      'instagram': instagram,
-      'github': github,
+      'followed': followed,
+      'follower': follower,
     });
   }
 
@@ -123,6 +100,23 @@ class DatabaseService {
       return exists;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<List<String>> getFavoritesTokens() async {
+    List<String> token = [];
+    try {
+      QuerySnapshot snapshot = await usersCollection
+          .document(id)
+          .collection('favorites')
+          .getDocuments();
+      List<DocumentSnapshot> result = snapshot.documents;
+      result.forEach((element) {
+        token.add(element.data['token']);
+      });
+      return token;
+    } catch (e) {
+      return token;
     }
   }
 
@@ -231,29 +225,6 @@ class DatabaseService {
     }).toList();
   }
 
-  List<FavoriteUsers> _favoriteListFromSnapshot(QuerySnapshot snapshot) {
-    return snapshot.documents.map((doc) {
-      return FavoriteUsers(
-        shared: doc.data['shared'] ?? false,
-        favorite: doc.data['favorite'] ?? false,
-        color: doc.data['color'] ?? 4278228616,
-        token: doc.data['token'] ?? '',
-        font: doc.data['font'] ?? 'Pacifico',
-        image: doc.data['image'] ?? '',
-        name: doc.data['name'] ?? '',
-        job: doc.data['job'] ?? '',
-        phone: doc.data['phone'] ?? '',
-        mail: doc.data['mail'] ?? '',
-        link: doc.data['link'] ?? '',
-        location: doc.data['location'] ?? '',
-        twitter: doc.data['twitter'] ?? '',
-        facebook: doc.data['facebook'] ?? '',
-        instagram: doc.data['instagram'] ?? '',
-        github: doc.data['github'] ?? '',
-      );
-    }).toList();
-  }
-
   //userData from snapshot
   UserData _userDataFromSnapshot(DocumentSnapshot documentSnapshot) {
     return UserData(
@@ -276,22 +247,40 @@ class DatabaseService {
     );
   }
 
+  List<FavoriteUser> _favoriteListFromSnapshot(QuerySnapshot snapshot) {
+    return snapshot.documents.map((doc) {
+      return FavoriteUser(
+        followed: doc.data['followed'] ?? '',
+        follower: doc.data['follower'] ?? '',
+        token: doc.data['token'] ?? '',
+      );
+    }).toList();
+  }
+
   //Get info stream
-  Stream<List<SearchUsers>> get userInfo {
+  Stream<List<SearchUsers>> get allUsers {
     return usersCollection.snapshots().map(_listFromSnapshot);
   }
 
-  //Get favorite stream
-  Stream<List<FavoriteUsers>> get favoriteUser {
+/*  //Get info stream
+  Stream<List<SearchUsers>> get test {
+    return usersCollection
+        .where('token', isEqualTo: token)
+        .snapshots()
+        .map(_listFromSnapshot);
+  }*/
+
+  //Get user doc stream
+  Stream<UserData> get userData {
+    return usersCollection.document(id).snapshots().map(_userDataFromSnapshot);
+  }
+
+  //Get favorite user stream
+  Stream<List<FavoriteUser>> get favorites {
     return usersCollection
         .document(id)
         .collection('favorites')
         .snapshots()
         .map(_favoriteListFromSnapshot);
-  }
-
-  //Get user doc stream
-  Stream<UserData> get userData {
-    return usersCollection.document(id).snapshots().map(_userDataFromSnapshot);
   }
 }

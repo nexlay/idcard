@@ -80,7 +80,6 @@ class _CreatorState extends State<IdCardViewer> {
       },
       //Open app clicking on push notification
       onLaunch: (Map<String, dynamic> message) async {
-        print('onMessage: $message');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -92,7 +91,6 @@ class _CreatorState extends State<IdCardViewer> {
       },
       //App is in background
       onResume: (Map<String, dynamic> message) async {
-        print('onMessage: $message');
         Navigator.push(
           context,
           MaterialPageRoute(

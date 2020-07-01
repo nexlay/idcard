@@ -1,4 +1,5 @@
 class SearchUsers {
+  String follower;
   bool shared;
   String token;
   String font;
@@ -16,7 +17,8 @@ class SearchUsers {
   String github;
 
   SearchUsers(
-      {this.shared,
+      {this.follower,
+      this.shared,
       this.token,
       this.font,
       this.color,

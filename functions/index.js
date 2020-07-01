@@ -8,14 +8,19 @@ exports.notificationFavorites=functions.firestore.document("idcard_users/{idcard
 
         const newDoc = change.data();
         const userToken = newDoc.token;
+        const followerName = newDoc.follower;
 
 
 
         const notificationContent = {
             notification: {
                 title: 'You have a new request!',
-                body: 'To check open the app.',
+                body: `${followerName}`,
                 click_action: 'FLUTTER_NOTIFICATION_CLICK'
+            },
+            data: {
+            token: `${userToken}`,
+            name: `${newDoc.followed}`,
             }
         };
 return admin.messaging().sendToDevice(userToken, notificationContent)

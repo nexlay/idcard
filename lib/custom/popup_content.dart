@@ -8,7 +8,7 @@ import '../dialog/flushbar.dart';
 
 class PopupContent extends StatefulWidget {
   final String id;
-  final bool favorite;
+  final String followedName;
   final bool shared;
   final int color;
   final String token;
@@ -28,7 +28,7 @@ class PopupContent extends StatefulWidget {
   PopupContent(
       {Key key,
       this.id,
-      this.favorite,
+      this.followedName,
       this.shared,
       this.token,
       this.font,
@@ -58,62 +58,53 @@ class _PopupContentState extends State<PopupContent> {
   //A default Name font style
   String defaultFont = 'Pacifico';
 
-  /*@override
+  bool favorite = false;
+
+  @override
   void initState() {
     DatabaseService(id: widget.id).checkExist(widget.token).then((value) {
-        setState(() {
-         favorite = value;
-        });
+      setState(() {
+        favorite = value;
+      });
     });
     super.initState();
   }
-*/
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(widget.color),
       appBar: AppBar(
+        elevation: 0.0,
         actions: [
           IconButton(
-            icon: widget.favorite ? Icon(Icons.star) : Icon(Icons.star_border),
-            color: widget.favorite ? Colors.red : Colors.grey,
+            icon: Icon(Icons.star),
+            color: favorite ? Colors.red : Colors.white,
             onPressed: () async {
-              if (widget.favorite) {
+              if (favorite) {
                 _showAlertDialog('Unlike ${widget.name}?',
                     'Data will be deleted from your list of favorites', 5);
               } else {
                 await DatabaseService(id: widget.id).addFavoriteUsers(
-                    widget.shared,
-                    false,
-                    widget.color,
-                    widget.token,
-                    widget.font,
-                    widget.image,
-                    widget.name,
-                    widget.job,
-                    widget.phone,
-                    widget.mail,
-                    widget.location,
-                    widget.link,
-                    widget.twitter,
-                    widget.facebook,
-                    widget.instagram,
-                    widget.github);
+                  widget.name,
+                  widget.token,
+                  widget.followedName,
+                );
 
                 _flushBar.flushBar(context, 'Request sanded successfully',
                     'Hide', Colors.white, Colors.black, true);
 
-                /*    setState(() {
+                setState(() {
                   favorite = true;
-                });*/
+                });
               }
             },
           ),
         ],
-        backgroundColor: Colors.white,
+        backgroundColor: Color(widget.color),
         leading: new Builder(builder: (context) {
           return IconButton(
             icon: Icon(Icons.clear),
-            color: Colors.grey,
             onPressed: () {
               try {
                 Navigator.pop(context); //close the popup
@@ -124,23 +115,25 @@ class _PopupContentState extends State<PopupContent> {
         brightness: Brightness.light,
       ),
       resizeToAvoidBottomPadding: false,
-      body: _buildPopUp(
-          widget.shared,
-          widget.color,
-          widget.token,
-          widget.font,
-          widget.image,
-          widget.name,
-          widget.job,
-          widget.phone,
-          widget.mail,
-          widget.location,
-          widget.link,
-          widget.twitter,
-          widget.facebook,
-          widget.instagram,
-          widget.github,
-          context),
+      body: Center(
+        child: _buildPopUp(
+            widget.shared,
+            widget.color,
+            widget.token,
+            widget.font,
+            widget.image,
+            widget.name,
+            widget.job,
+            widget.phone,
+            widget.mail,
+            widget.location,
+            widget.link,
+            widget.twitter,
+            widget.facebook,
+            widget.instagram,
+            widget.github,
+            context),
+      ),
     );
   }
 
@@ -169,321 +162,466 @@ class _PopupContentState extends State<PopupContent> {
           )
         : SingleChildScrollView(
             child: Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-              child: Card(
-                color:
-                    color.toString().isNotEmpty ? Color(color) : defaultColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(12.0),
-                  ),
-                ),
-                child: Container(
-                  padding: EdgeInsets.only(left: 5.0, right: 5.0, bottom: 5.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Place where user can change his profile image
-                      name.isEmpty
-                          ? Container()
-                          : image.isEmpty
-                              ? EmptyUserImage(
-                                  70.0,
-                                  Icon(
-                                    Icons.perm_identity,
-                                    color: Colors.white,
-                                    size: 38,
-                                  ),
-                                )
-                              : Container(
-                                  padding: EdgeInsets.symmetric(vertical: 20.0),
-                                  child: CircleAvatar(
-                                    backgroundImage: image != null
-                                        ? NetworkImage(image)
-                                        : Container(),
-                                    radius: 60.0,
-                                    backgroundColor: color.toString().isNotEmpty
-                                        ? Color(color)
-                                        : defaultColor,
-                                  ),
-                                ),
-                      //Name
-                      name.isNotEmpty
-                          ? Container(
-                              padding: EdgeInsets.only(bottom: 20.0),
-                              child: Text(
-                                name,
-                                style: TextStyle(
-                                    fontSize: 32,
-                                    color: Colors.white,
-                                    fontFamily:
-                                        font.isNotEmpty ? font : defaultFont),
+              color: Color(widget.color),
+              padding: EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Place where user can change his profile image
+                  name.isEmpty
+                      ? Container()
+                      : image.isEmpty
+                          ? EmptyUserImage(
+                              70.0,
+                              Icon(
+                                Icons.perm_identity,
+                                color: Colors.white,
+                                size: 38,
                               ),
                             )
-                          : Container(),
-
-                      //Job
-                      job.isNotEmpty
-                          ? Text(
-                              job.toUpperCase(),
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  letterSpacing: 2.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            )
-                          : Container(),
-
-                      job.isNotEmpty
-                          ? Divider(
-                              color: Colors.white,
-                              endIndent: 40,
-                              indent: 40,
-                              thickness: 1,
-                              height: 50,
-                            )
-                          : Container(),
-
-                      widget.favorite == true
-                          //Phone
-                          ? Column(
-                              children: [
-                                phone.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.phone,
-                                            color: color != null
-                                                ? Color(color)
-                                                : defaultColor,
-                                          ),
-                                          title: Text(
-                                            phone,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher('tel:' + phone);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
-                                        ),
-                                      )
+                          : Container(
+                              padding: EdgeInsets.symmetric(vertical: 20.0),
+                              child: CircleAvatar(
+                                backgroundImage: image != null
+                                    ? NetworkImage(image)
                                     : Container(),
+                                radius: 60.0,
+                                backgroundColor: color.toString().isNotEmpty
+                                    ? Color(color)
+                                    : defaultColor,
+                              ),
+                            ),
+                  //Name
+                  name.isNotEmpty
+                      ? Container(
+                          padding: EdgeInsets.only(bottom: 20.0),
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                                fontSize: 32,
+                                color: Colors.white,
+                                fontFamily:
+                                    font.isNotEmpty ? font : defaultFont),
+                          ),
+                        )
+                      : Container(),
 
-                                //Mail
-                                mail.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.mail,
-                                            color: color != null
-                                                ? Color(color)
-                                                : defaultColor,
-                                          ),
-                                          title: Text(
-                                            mail,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher('mailto: ' +
-                                                mail +
-                                                '?subject=Write a subject you interested in, please&body=');
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
-                                        ),
-                                      )
-                                    : Container(),
+                  //Job
+                  job.isNotEmpty
+                      ? Text(
+                          job.toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 16,
+                              letterSpacing: 2.5,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        )
+                      : Container(),
+                  favorite == true
+                      //Phone
+                      ? Column(
+                          children: [
+                            job.isNotEmpty
+                                ? Divider(
+                                    color: Colors.white,
+                                    endIndent: 40,
+                                    indent: 40,
+                                    thickness: 1,
+                                    height: 50,
+                                  )
+                                : Container(),
 
-                                //Location
-                                location.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.location_city,
-                                            color: color != null
-                                                ? Color(color)
-                                                : defaultColor,
-                                          ),
-                                          title: Text(
-                                            location,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher(
-                                                'https://www.google.com/maps/search/?api=1&query=' +
-                                                    location);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
-                                        ),
-                                      )
-                                    : Container(),
-
-                                //Link
-                                link.isEmpty
-                                    ? Container()
-                                    : Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.link,
-                                            color: color != null
-                                                ? Color(color)
-                                                : defaultColor,
-                                          ),
-                                          title: Text(
-                                            link,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher('https://' + link);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
+                            phone.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.phone,
+                                        color: color != null
+                                            ? Color(color)
+                                            : defaultColor,
+                                      ),
+                                      title: Text(
+                                        phone,
+                                        style: TextStyle(
+                                          fontSize: 16,
                                         ),
                                       ),
+                                      onTap: () {
+                                        _uriLauncher('tel:' + phone);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
 
-                                //Twitter
-                                twitter.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            SociaIcons.twitter,
-                                            color: Colors
-                                                .blue, /*user.color != null
-                                          ? Color(user.color)
-                                          : defaultColor,*/
-                                          ),
-                                          title: Text(
-                                            twitter,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher(
-                                                'https://twitter.com/' +
-                                                    twitter);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
+                            //Mail
+                            mail.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.mail,
+                                        color: color != null
+                                            ? Color(color)
+                                            : defaultColor,
+                                      ),
+                                      title: Text(
+                                        mail,
+                                        style: TextStyle(
+                                          fontSize: 16,
                                         ),
-                                      )
-                                    : Container(),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher('mailto: ' +
+                                            mail +
+                                            '?subject=Write a subject you interested in, please&body=');
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
 
-                                //Facebook
-                                facebook.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            SociaIcons.facebook,
-                                            color: Colors.blue[
-                                                900], /*user.color != null
-                                          ? Color(user.color)
-                                          : defaultColor,*/
-                                          ),
-                                          title: Text(
-                                            facebook,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher(
-                                                'https://www.facebook.com/profile.php?id=' +
-                                                    facebook);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
+                            //Location
+                            location.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.location_city,
+                                        color: color != null
+                                            ? Color(color)
+                                            : defaultColor,
+                                      ),
+                                      title: Text(
+                                        location,
+                                        style: TextStyle(
+                                          fontSize: 16,
                                         ),
-                                      )
-                                    : Container(),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher(
+                                            'https://www.google.com/maps/search/?api=1&query=' +
+                                                location);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
 
-                                //Instagram
-                                instagram.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            SociaIcons.instagram,
-                                            color: Colors.red[
-                                                700], /*user.color != null
-                                          ? Color(user.color)
-                                          : defaultColor,*/
-                                          ),
-                                          title: Text(
-                                            instagram,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher(
-                                                'https://www.instagram.com/' +
-                                                    instagram);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
+                            //Link
+                            link.isEmpty
+                                ? Container()
+                                : Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.link,
+                                        color: color != null
+                                            ? Color(color)
+                                            : defaultColor,
+                                      ),
+                                      title: Text(
+                                        link,
+                                        style: TextStyle(
+                                          fontSize: 16,
                                         ),
-                                      )
-                                    : Container(),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher('https://' + link);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  ),
 
-                                //Git
-                                github.isNotEmpty
-                                    ? Card(
-                                        color: Colors.white,
-                                        child: ListTile(
-                                          leading: Icon(
-                                            SociaIcons.github,
-                                            color: Colors
-                                                .black, /*user.color != null
-                                          ? Color(user.color)
-                                          : defaultColor,*/
-                                          ),
-                                          title: Text(
-                                            github,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            _uriLauncher(
-                                                'https://github.com/' + github);
-                                          },
-                                          onLongPress: () {
-                                            // _deleteSingleTile(context, user.id);
-                                          },
+                            //Twitter
+                            twitter.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        SociaIcons.twitter,
+                                        color: Colors.blue,
+                                      ),
+                                      title: Text(
+                                        twitter,
+                                        style: TextStyle(
+                                          fontSize: 16,
                                         ),
-                                      )
-                                    : Container(),
-                              ],
-                            )
-                          : Container(),
-                    ],
-                  ),
-                ),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher(
+                                            'https://twitter.com/' + twitter);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
+
+                            //Facebook
+                            facebook.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        SociaIcons.facebook,
+                                        color: Colors.blue[900],
+                                      ),
+                                      title: Text(
+                                        facebook,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher(
+                                            'https://www.facebook.com/profile.php?id=' +
+                                                facebook);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
+
+                            //Instagram
+                            instagram.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        SociaIcons.instagram,
+                                        color: Colors.red[700],
+                                      ),
+                                      title: Text(
+                                        instagram,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher(
+                                            'https://www.instagram.com/' +
+                                                instagram);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
+
+                            //Git
+                            github.isNotEmpty
+                                ? Card(
+                                    color: Colors.white,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        SociaIcons.github,
+                                        color: Colors.black,
+                                      ),
+                                      title: Text(
+                                        github,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        _uriLauncher(
+                                            'https://github.com/' + github);
+                                      },
+                                      onLongPress: () {
+                                        // _deleteSingleTile(context, user.id);
+                                      },
+                                    ),
+                                  )
+                                : Container(),
+                          ],
+                        )
+                      : Container(
+                          child: Column(
+                            children: [
+                              //Phone
+                              phone.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.phone,
+                                          color: color != null
+                                              ? Color(color)
+                                              : defaultColor,
+                                        ),
+                                        title: Text(
+                                          phone.length > 6
+                                              ? '******' + phone.substring(6)
+                                              : '******',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Mail
+                              mail.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.mail,
+                                          color: color != null
+                                              ? Color(color)
+                                              : defaultColor,
+                                        ),
+                                        title: Text(
+                                          '******' + mail.substring(15),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Location
+                              location.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.location_city,
+                                          color: color != null
+                                              ? Color(color)
+                                              : defaultColor,
+                                        ),
+                                        title: location.length > 15
+                                            ? Text(
+                                                '******' +
+                                                    location.substring(15),
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                ),
+                                              )
+                                            : Text('******'),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Link
+                              link.isEmpty
+                                  ? Container()
+                                  : Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.link,
+                                          color: color != null
+                                              ? Color(color)
+                                              : defaultColor,
+                                        ),
+                                        title: link.length > 20
+                                            ? Text(
+                                                '******' + link.substring(20),
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                ),
+                                              )
+                                            : Text('******'),
+                                      ),
+                                    ),
+
+                              //Twitter
+                              twitter.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          SociaIcons.twitter,
+                                          color: Colors.blue,
+                                        ),
+                                        title: Text(
+                                          '******',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Facebook
+                              facebook.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          SociaIcons.facebook,
+                                          color: Colors.blue[900],
+                                        ),
+                                        title: Text(
+                                          '******',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Instagram
+                              instagram.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          SociaIcons.instagram,
+                                          color: Colors.red[700],
+                                        ),
+                                        title: Text(
+                                          '******',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+
+                              //Git
+                              github.isNotEmpty
+                                  ? Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          SociaIcons.github,
+                                          color: Colors.black,
+                                        ),
+                                        title: Text(
+                                          '******',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
+                          ),
+                        ),
+                ],
               ),
             ),
           );
